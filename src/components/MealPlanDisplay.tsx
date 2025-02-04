@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Clock, Utensils, AlertCircle, ChevronLeft, ChevronRight, Youtube, BookOpen, Edit2, Plus } from 'lucide-react';
 
 interface DailyTargets {
@@ -11,9 +11,9 @@ interface MealPlanDisplayProps {
 }
 
 const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ dailyTargets }) => {
-  const [selectedDay, setSelectedDay] = useState('Monday');
+  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const [selectedDay, setSelectedDay] = useState(weekdays[new Date().getDay()]);
   const [editingMeal, setEditingMeal] = useState<string | null>(null);
-  const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
   const weeklyMeals = {
     Monday: [
@@ -51,7 +51,216 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ dailyTargets }) => {
         videoUrl: 'https://youtube.com/watch?v=example'
       }
     ],
-    // Add similar meal plans for other days
+    Tuesday: [
+      {
+        type: 'Breakfast',
+        time: '7:30 AM',
+        recipe: 'Green Smoothie Bowl',
+        prepTime: '15 mins',
+        image: 'https://images.unsplash.com/photo-1490323914169-0e5a0998e9d5?auto=format&fit=crop&w=600',
+        calories: 280,
+        protein: 14,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Lunch',
+        time: '12:30 PM',
+        recipe: 'Buddha Bowl with Tofu',
+        prepTime: '30 mins',
+        image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600',
+        calories: 420,
+        protein: 22,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Dinner',
+        time: '6:30 PM',
+        recipe: 'Grilled Salmon with Quinoa',
+        prepTime: '35 mins',
+        image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=600',
+        calories: 460,
+        protein: 32,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      }
+    ],
+    Wednesday: [
+      {
+        type: 'Breakfast',
+        time: '7:30 AM',
+        recipe: 'Avocado Toast with Eggs',
+        prepTime: '20 mins',
+        image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=600',
+        calories: 350,
+        protein: 16,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Lunch',
+        time: '12:30 PM',
+        recipe: 'Chickpea Salad Wrap',
+        prepTime: '20 mins',
+        image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600',
+        calories: 380,
+        protein: 15,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Dinner',
+        time: '6:30 PM',
+        recipe: 'Vegetable Stir-Fry',
+        prepTime: '30 mins',
+        image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=600',
+        calories: 320,
+        protein: 18,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      }
+    ],
+    Thursday: [
+      {
+        type: 'Breakfast',
+        time: '7:30 AM',
+        recipe: 'Chia Seed Pudding',
+        prepTime: '10 mins',
+        image: 'https://images.unsplash.com/photo-1490474504059-bf2db5ab2348?auto=format&fit=crop&w=600',
+        calories: 290,
+        protein: 12,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Lunch',
+        time: '12:30 PM',
+        recipe: 'Lentil Soup',
+        prepTime: '40 mins',
+        image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=600',
+        calories: 340,
+        protein: 16,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Dinner',
+        time: '6:30 PM',
+        recipe: 'Black Bean Burrito Bowl',
+        prepTime: '35 mins',
+        image: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=600',
+        calories: 420,
+        protein: 22,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      }
+    ],
+    Friday: [
+      {
+        type: 'Breakfast',
+        time: '7:30 AM',
+        recipe: 'Banana Oatmeal Pancakes',
+        prepTime: '25 mins',
+        image: 'https://images.unsplash.com/photo-1506084868230-bb9d95c24759?auto=format&fit=crop&w=600',
+        calories: 380,
+        protein: 14,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Lunch',
+        time: '12:30 PM',
+        recipe: 'Greek Salad with Grilled Chicken',
+        prepTime: '30 mins',
+        image: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?auto=format&fit=crop&w=600',
+        calories: 420,
+        protein: 28,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Dinner',
+        time: '6:30 PM',
+        recipe: 'Baked Sweet Potato with Black Beans',
+        prepTime: '50 mins',
+        image: 'https://images.unsplash.com/photo-1502004960551-7de5ce10c289?auto=format&fit=crop&w=600',
+        calories: 380,
+        protein: 16,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      }
+    ],
+    Saturday: [
+      {
+        type: 'Breakfast',
+        time: '8:30 AM',
+        recipe: 'Veggie Breakfast Burrito',
+        prepTime: '25 mins',
+        image: 'https://images.unsplash.com/photo-1588556008426-af415581d44b?auto=format&fit=crop&w=600',
+        calories: 420,
+        protein: 18,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Lunch',
+        time: '1:00 PM',
+        recipe: 'Poke Bowl',
+        prepTime: '20 mins',
+        image: 'https://images.unsplash.com/photo-1546069901-d5bfd2cbfb1f?auto=format&fit=crop&w=600',
+        calories: 450,
+        protein: 26,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Dinner',
+        time: '7:00 PM',
+        recipe: 'Mushroom and Spinach Risotto',
+        prepTime: '45 mins',
+        image: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?auto=format&fit=crop&w=600',
+        calories: 460,
+        protein: 14,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      }
+    ],
+    Sunday: [
+      {
+        type: 'Breakfast',
+        time: '9:00 AM',
+        recipe: 'Acai Bowl',
+        prepTime: '15 mins',
+        image: 'https://images.unsplash.com/photo-1490885578174-acda8905c2c6?auto=format&fit=crop&w=600',
+        calories: 340,
+        protein: 12,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Lunch',
+        time: '1:30 PM',
+        recipe: 'Quinoa Stuffed Bell Peppers',
+        prepTime: '45 mins',
+        image: 'https://images.unsplash.com/photo-1458642849426-cfb724f15ef7?auto=format&fit=crop&w=600',
+        calories: 380,
+        protein: 16,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      },
+      {
+        type: 'Dinner',
+        time: '7:00 PM',
+        recipe: 'Cauliflower Mac and Cheese',
+        prepTime: '40 mins',
+        image: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=600',
+        calories: 420,
+        protein: 18,
+        recipeUrl: 'https://www.example.com/recipe',
+        videoUrl: 'https://youtube.com/watch?v=example'
+      }
+    ]
   };
 
   interface MealEditFormProps {
@@ -150,6 +359,18 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ dailyTargets }) => {
     </div>
   );
 
+  const handlePreviousDay = () => {
+    const currentIndex = weekdays.indexOf(selectedDay);
+    const previousIndex = currentIndex === 0 ? weekdays.length - 1 : currentIndex - 1;
+    setSelectedDay(weekdays[previousIndex]);
+  };
+
+  const handleNextDay = () => {
+    const currentIndex = weekdays.indexOf(selectedDay);
+    const nextIndex = currentIndex === weekdays.length - 1 ? 0 : currentIndex + 1;
+    setSelectedDay(weekdays[nextIndex]);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -167,7 +388,10 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ dailyTargets }) => {
       </div>
 
       <div className="flex justify-between items-center space-x-4 bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow-sm">
-        <button className="p-2 hover:bg-primary-50 rounded-full transition-colors">
+        <button 
+          onClick={handlePreviousDay}
+          className="p-2 hover:bg-primary-50 rounded-full transition-colors"
+        >
           <ChevronLeft className="h-5 w-5 text-primary-600" />
         </button>
         <div className="flex-1 flex justify-between">
@@ -185,7 +409,10 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ dailyTargets }) => {
             </button>
           ))}
         </div>
-        <button className="p-2 hover:bg-primary-50 rounded-full transition-colors">
+        <button 
+          onClick={handleNextDay}
+          className="p-2 hover:bg-primary-50 rounded-full transition-colors"
+        >
           <ChevronRight className="h-5 w-5 text-primary-600" />
         </button>
       </div>
