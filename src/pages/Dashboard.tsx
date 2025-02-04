@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, useNavigate, Link } from 'react-router-dom';
-import { Settings, Clock, Apple, BookOpen, Heart, Calendar, ChefHat, ShoppingCart, LogOut } from 'lucide-react';
+import { Settings, Clock, Apple, BookOpen, Heart, Calendar, ChefHat, ShoppingCart, LogOut, ChevronDown } from 'lucide-react';
 import PreferencesForm from '../components/PreferencesForm';
 import MealPlanDisplay from '../components/MealPlanDisplay';
 import AyurvedicTips from '../components/AyurvedicTips';
@@ -10,19 +10,33 @@ import { auth } from '../lib/auth';
 
 function Dashboard() {
   const navigate = useNavigate();
-  const [dailyTargets, setDailyTargets] = React.useState({
+  const [userName, setUserName] = useState<string>('');
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [dailyTargets, setDailyTargets] = useState({
     protein: 60,
     calories: 2000
   });
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await auth.getCurrentUser();
+        if (user) {
+          setUserName(user.name);
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+      }
+    };
+    fetchUser();
+  }, []);
+
   const handleLogout = async () => {
     try {
       auth.logout();
-      // Force navigation to home and prevent going back
       navigate('/', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
-      // Force logout even if there's an error
       auth.logout();
       navigate('/', { replace: true });
     }
@@ -31,6 +45,19 @@ function Dashboard() {
   const handleTargetsChange = (newTargets: { protein: number; calories: number }) => {
     setDailyTargets(newTargets);
   };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const userMenu = document.getElementById('user-menu');
+      if (userMenu && !userMenu.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-secondary-50 to-accent-50">
@@ -44,7 +71,7 @@ function Dashboard() {
               <ChefHat className="h-8 w-8 text-primary-500" />
               <span className="ml-2 text-xl font-semibold gradient-text">Vital Bites</span>
             </Link>
-            <div className="flex space-x-8">
+            <div className="flex items-center space-x-8">
               <NavLink
                 to="/dashboard"
                 end
@@ -58,19 +85,6 @@ function Dashboard() {
               >
                 <Apple className="h-5 w-5 mr-2" />
                 Meal Plan
-              </NavLink>
-              <NavLink
-                to="/dashboard/preferences"
-                className={({ isActive }) =>
-                  `flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'text-primary-600 bg-primary-50'
-                      : 'text-gray-500 hover:text-primary-600 hover:bg-primary-50'
-                  }`
-                }
-              >
-                <Settings className="h-5 w-5 mr-2" />
-                Preferences
               </NavLink>
               <NavLink
                 to="/dashboard/recipes"
@@ -98,13 +112,44 @@ function Dashboard() {
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 Shopping List
               </NavLink>
-              <button
-                onClick={handleLogout}
-                className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-              >
-                <LogOut className="h-5 w-5 mr-2" />
-                Logout
-              </button>
+
+              {/* User Menu */}
+              <div className="relative" id="user-menu">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <span>Hi, {userName}</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                    <div className="py-1">
+                      <NavLink
+                        to="/dashboard/preferences"
+                        className={({ isActive }) =>
+                          `flex items-center px-4 py-2 text-sm ${
+                            isActive
+                              ? 'text-primary-600 bg-primary-50'
+                              : 'text-gray-700 hover:bg-gray-50'
+                          }`
+                        }
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Preferences
+                      </NavLink>
+                      <button
+                        onClick={handleLogout}
+                        className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
