@@ -1,0 +1,43 @@
+steps:
+  # Decrypt the file containing the key
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+    - kms
+    - decrypt
+    - --ciphertext-file=service-account.json.enc
+    - --plaintext-file=service-account.json
+    - --location=global
+    - --keyring=vital-bites-keyring
+    - --key=vital-bites-key
+
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/vital-bites-api', '.']
+  
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/vital-bites-api']
+  
+  # Deploy container image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+    - 'run'
+    - 'deploy'
+    - 'vital-bites-api'
+    - '--image'
+    - 'gcr.io/$PROJECT_ID/vital-bites-api'
+    - '--region'
+    - 'us-central1'
+    - '--platform'
+    - 'managed'
+    - '--allow-unauthenticated'
+    - '--set-env-vars'
+    - 'SECRET_KEY=${_SECRET_KEY},OPENAI_API_KEY=${_OPENAI_API_KEY}'
+
+substitutions:
+  _SECRET_KEY: 'your-secret-key'
+  _OPENAI_API_KEY: 'your-openai-key'
+
+images:
+  - 'gcr.io/$PROJECT_ID/vital-bites-api'

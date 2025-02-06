@@ -1,14 +1,11 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.hash import bcrypt_sha256
 from pydantic import BaseModel
-from sqlmodel import Session, select
-
-from database import get_session
-from models import User
+import firebase_admin
+from firebase_admin import auth as firebase_auth
 
 # Security configuration
 SECRET_KEY = "your-secret-key-here"  # In production, use a secure secret key
@@ -20,23 +17,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class Token(BaseModel):
     access_token: str
     token_type: str
+    firebase_token: str
 
 class TokenData(BaseModel):
-    email: Optional[str] = None
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt_sha256.verify(plain_password, hashed_password)
-
-def get_password_hash(password: str) -> str:
-    return bcrypt_sha256.hash(password)
-
-def authenticate_user(email: str, password: str, session: Session) -> Optional[User]:
-    user = session.exec(select(User).where(User.email == email)).first()
-    if not user:
-        return None
-    if not verify_password(password, user.hashed_password):
-        return None
-    return user
+    sub: Optional[str] = None
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
@@ -48,25 +32,46 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    session: Session = Depends(get_session)
-) -> User:
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        # Decode JWT token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        user_id: str = payload.get("sub")
+        if user_id is None:
             raise credentials_exception
-        token_data = TokenData(email=email)
+        
+        # Verify the user exists in Firebase
+        try:
+            firebase_auth.get_user(user_id)
+        except firebase_auth.UserNotFoundError:
+            raise credentials_exception
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Firebase auth error: {str(e)}"
+            )
+            
+        return user_id
     except JWTError:
         raise credentials_exception
-    
-    user = session.exec(select(User).where(User.email == token_data.email)).first()
-    if user is None:
-        raise credentials_exception
-    return user
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Token validation error: {str(e)}"
+        )
+
+def verify_firebase_token(id_token: str) -> dict:
+    """Verify Firebase ID token and return user claims"""
+    try:
+        decoded_token = firebase_auth.verify_id_token(id_token)
+        return decoded_token
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid Firebase token: {str(e)}"
+        )
